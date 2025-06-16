@@ -1,0 +1,14 @@
+.*
+*.pyc
+*.egg-info
+dist
+build
+htmlcov
+__pycache__
+docs/build
+coverage.xml
+
+!.gitignore
+!.github
+!.dockerignore
+!.readthedocs.yaml
