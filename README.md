@@ -25,7 +25,7 @@ pip install exdata
 
 ## Quick Start
 
-![Demo](https://raw.github.com/kindlycat/exdata/main/docs/source/_static/demo.png)
+![Demo](docs/source/_static/demo.png)
 
 ```python
 from exdata import XlsxExporter, Sheet, Row, Cell, Column
