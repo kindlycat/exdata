@@ -5,6 +5,7 @@ from typing import IO
 from xlsxwriter import Workbook
 from xlsxwriter.worksheet import Format as XlsxFormat, Worksheet
 
+from exdata.exceptions import FormatNotFoundError
 from exdata.struct import (
     Cell,
     Column,
@@ -98,7 +99,13 @@ class XlsxExporter:
         if name is None:
             return None
 
-        return self._formats[name]
+        try:
+            return self._formats[name]
+        except KeyError:
+            raise FormatNotFoundError(
+                f'Format `{name}` not found. '
+                f'Make sure it is defined in `formats`.'
+            )
 
     def write_rich(
         self,

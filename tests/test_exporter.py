@@ -8,6 +8,7 @@ import pytest
 from openpyxl.reader.excel import load_workbook
 
 from exdata import XlsxExporter
+from exdata.exceptions import FormatNotFoundError
 from exdata.struct import Cell, Column, Format, RichValue, Row, Sheet
 from tests import make_workbook
 
@@ -370,3 +371,14 @@ def test_export_to_path() -> None:
         wb = load_workbook(f)
 
     assert wb['Test']['A1'].value == 'Test'
+
+
+def test_format_not_found() -> None:
+    name = 'non_existent_format'
+    message = (
+        f'Format `{name}` not found. Make sure it is defined in `formats`.'
+    )
+    with pytest.raises(FormatNotFoundError, match=message):
+        make_workbook(
+            data=[Row([Cell('Test', format='non_existent_format')])],
+        )
