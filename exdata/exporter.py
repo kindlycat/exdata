@@ -105,7 +105,7 @@ class XlsxExporter:
             raise FormatNotFoundError(
                 f'Format `{name}` not found. '
                 f'Make sure it is defined in `formats`.'
-            )
+            ) from None
 
     def write_rich(
         self,
