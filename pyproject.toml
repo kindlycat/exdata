@@ -1,6 +1,6 @@
 [project]
 name = "exdata"
-version = "0.1.0"
+version = "0.1.1"
 description = "Export data to xlsx"
 authors = [
     {name = "Grigory Mishchenko", email = "grishkokot@gmail.com"},

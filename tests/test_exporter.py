@@ -1,3 +1,4 @@
+from collections.abc import Iterator
 from io import BytesIO
 from math import floor
 from pathlib import Path
@@ -218,6 +219,27 @@ def test_multiple_sheets() -> None:
 
     assert wb['Test 1']['A1'].value == 'Test 1'
     assert wb['Test 2']['A1'].value == 'Test 2'
+
+
+def test_generators() -> None:
+    def generate_column_data(row_id, col_id) -> Iterator[Cell]:
+        yield Cell(f'Test {row_id}.{col_id}')
+
+    def generate_row_data(row_id) -> Iterator[Column]:
+        for col_id in range(1, 4):
+            yield Column(generate_column_data(row_id, col_id))
+
+    def generate_sheet_data() -> Iterator[Row]:
+        for row_id in range(1, 4):
+            yield Row(generate_row_data(row_id))
+
+    wb = make_workbook(
+        data=generate_sheet_data(),
+    )
+
+    for i in range(1, 4):
+        for j in range(1, 4):
+            assert wb['Test'].cell(row=i, column=j).value == f'Test {i}.{j}'
 
 
 def test_row_height() -> None:
