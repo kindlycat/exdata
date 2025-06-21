@@ -11,6 +11,7 @@ def make_workbook(
     formats: dict | None = None,
     column_width: dict | None = None,
     autofit_max_width: int | None = Default,
+    sheet_format: str | None = None,
 ) -> Workbook:
     exporter = XlsxExporter(
         sheets=[
@@ -19,6 +20,7 @@ def make_workbook(
                 name='Test',
                 column_width=column_width or {},
                 autofit_max_width=autofit_max_width,
+                format=sheet_format,
             ),
         ],
         formats=formats,

@@ -60,6 +60,31 @@ def test_cells_format() -> None:
     assert wb['Test']['B1'].fill.fgColor.rgb == 'FF0000FF'
 
 
+def test_format_inheritance() -> None:
+    wb = make_workbook(
+        data=[
+            Row(
+                [
+                    Cell('Test 1'),
+                    Cell('Test 2', format='cell'),
+                ],
+                format='row',
+            ),
+        ],
+        sheet_format='sheet',
+        formats={
+            'sheet': {'align': 'center'},
+            'row': {'bg_color': '#ff00ff'},
+            'cell': {'bg_color': '#0000ff'},
+        },
+    )
+
+    assert wb['Test']['A1'].alignment.horizontal == 'center'
+    assert wb['Test']['A1'].fill.fgColor.rgb == 'FFFF00FF'
+    assert wb['Test']['B1'].alignment.horizontal == 'center'
+    assert wb['Test']['B1'].fill.fgColor.rgb == 'FF0000FF'
+
+
 def test_cell_offset() -> None:
     wb = make_workbook(
         data=[
