@@ -65,48 +65,73 @@ The XlsxExporter accepts different types of buffers for writing the Excel data:
 Formatting Cells
 ~~~~~~~~~~~~~~~~
 
-You can format cells using the built-in formatting options:
+You can format cells using the built-in formatting options.
+Cell formatting can be defined at multiple levels: on the cell itself,
+on the row/column, or on the sheet. Formatting is merged from all applicable
+levels, with the cell's own format taking the highest precedence,
+followed by the row/column, and the sheet.
+This means that if a format property is not specified at a higher level
+(e.g., the cell), it will be inherited from the next level
+(row/column, or sheet), and all properties are combined rather than
+overridden entirely.
+
+For example, if the sheet format sets a font size, the column format sets a
+color, the row format sets italic, and the cell format sets bold, the
+resulting cell will be bold, italic, blue, and have the specified font size.
+
+Example:
 
 .. code-block:: python
 
-    from exdata import XlsxExporter, Sheet, Row, Cell, Format
+    from exdata import XlsxExporter, Sheet, Row, Column, Cell, Format
 
     # Define formats
     formats = {
         "header": {
             "bold": True,
             "bg_color": "#CCCCCC",
-            "align": "center"
-        }
+        },
+        "row_format": {"italic": True},
+        "sheet_format": {"align": "center"}
     }
 
     # Create a sheet with formatted data
     sheet = Sheet(
         name="Sheet1",
         data=[
-            Row(data=[
-                Cell(value="Name", format="header"),
-                Cell(value="Age", format="header"),
-                Cell(value="City", format="header")
-            ]),
-            Row(data=[
-                Cell(value="John"),
-                Cell(value=30),
-                Cell(value="New York")
-            ])
-        ]
+            Row(
+                data=[
+                    # Cell with its own format (merged with row/sheet)
+                    # It will be bold, italic, and centered with a gray background
+                    Cell(value="Name", format="header"),
+                    Cell(value="Age", format="header"),
+                    Cell(value="City", format="header")
+                ],
+                format="row_format"
+            ),
+            Row(
+                # It will be italic and centered
+                data=[
+                    Cell(value="John"),
+                    Cell(value=30),
+                    Cell(value="New York")
+                ],
+                format="row_format",
+            )
+        ],
+        format="sheet_format",
     )
 
     # Create and configure the exporter with formats
     exporter = XlsxExporter(
         sheets=[sheet],
         formats=formats,
-        workbook_options={'in_memory': True}
     )
 
     # Export to a file
     with open("formatted.xlsx", "wb") as f:
         f.write(exporter.export().read())
+
 
 Multiple Sheets
 ~~~~~~~~~~~~~~~

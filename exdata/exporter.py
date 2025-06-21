@@ -5,6 +5,7 @@ from typing import IO
 from xlsxwriter import Workbook
 from xlsxwriter.worksheet import Format as XlsxFormat, Worksheet
 
+from exdata.exceptions import FormatNotFoundError
 from exdata.struct import (
     Cell,
     Column,
@@ -48,6 +49,7 @@ class XlsxExporter:
         """
         self.sheets = sheets
         self.formats = formats or {}
+        self._formats = {}
 
         self.workbook_options = workbook_options
         if self.workbook_options is None:
@@ -56,9 +58,6 @@ class XlsxExporter:
         self.buffer = buffer or io.BytesIO()
 
         self.workbook = Workbook(self.buffer, options=self.workbook_options)
-
-        self._formats = {}
-        self.init_formats(self.workbook)
 
     def export(self) -> IO:
         """Exports the sheets as an XLSX file.
@@ -76,29 +75,38 @@ class XlsxExporter:
 
         return self.buffer
 
-    def init_formats(self, workbook: Workbook) -> None:
-        """Initializes formatting styles for the workbook.
-
-        Args:
-            workbook (Workbook): The workbook where formats are applied.
-        """
-        for format_name, format_properties in self.formats.items():
-            self._formats[format_name] = workbook.add_format(format_properties)
-
-    def get_format(self, name: str | None) -> XlsxFormat | None:
+    def get_format(self, *names: str | None) -> XlsxFormat | None:
         """Retrieves a predefined format by its name.
 
         Args:
-            name (str | None): The name of the format.
+            names (str | None): The names of formats.
 
         Returns:
-            XlsxFormat | None: The requested format, or None if name is not
+            XlsxFormat | None: The requested format, or None if names is not
                 provided.
         """
-        if name is None:
+        if not names:
             return None
 
-        return self._formats[name]
+        key: str = '|'.join(names)
+
+        if key in self._formats:
+            return self._formats[key]
+
+        format_values = {}
+        for name in names:
+            try:
+                current_format = self.formats[name]
+            except KeyError:
+                raise FormatNotFoundError(
+                    f'Format `{name}` not found. '
+                    f'Make sure it is defined in `formats`.'
+                ) from None
+
+            format_values.update(current_format)
+
+        self._formats[key] = self.workbook.add_format(format_values)
+        return self._formats[key]
 
     def write_rich(
         self,
@@ -144,7 +152,7 @@ class XlsxExporter:
         col_number: int,
         row: Row,
         content_size: Size,
-        cell_format: str | None = None,
+        formats: tuple[str],
     ) -> bool:
         """Writes a row of data into the worksheet.
 
@@ -154,14 +162,16 @@ class XlsxExporter:
             col_number (int): The column index for the first cell.
             row (Row): The row object containing the data.
             content_size (Size): The total size of the row content.
-            cell_format (str | None): Formatting options.
+            formats (tuple[str]): Formatting options.
 
         Returns:
             bool: True if successful, False otherwise.
         """
         row_number += row.y_offset
         col_number += row.x_offset
-        cell_format = row.format or cell_format
+
+        if row.format:
+            formats += (row.format,)
 
         content_size: Size = content_size.clear_offset(
             x_offset=row.x_offset,
@@ -192,7 +202,7 @@ class XlsxExporter:
                 col_number,
                 item,
                 item_size,
-                cell_format,
+                formats,
             )
 
             col_number += item_size.columns
@@ -209,7 +219,7 @@ class XlsxExporter:
         col_number: int,
         column: Column,
         content_size: Size,
-        cell_format: str | None = None,
+        formats: tuple[str],
     ) -> bool:
         """Writes a column of data into the worksheet.
 
@@ -219,14 +229,16 @@ class XlsxExporter:
             col_number (int): The column index where data will be written.
             column (Column): The column object containing the data.
             content_size (Size): The total size of the column content.
-            cell_format (str | None): Formatting options.
+            formats (tuple[str]): Formatting options.
 
         Returns:
             bool: True if successful, False otherwise.
         """
         row_number += column.y_offset
         col_number += column.x_offset
-        cell_format = column.format or cell_format
+
+        if column.format:
+            formats += (column.format,)
 
         content_size: Size = content_size.clear_offset(
             x_offset=column.x_offset,
@@ -255,7 +267,7 @@ class XlsxExporter:
                 col_number,
                 item,
                 item_size,
-                cell_format,
+                formats,
             )
 
             row_number += item_size.rows
@@ -269,7 +281,7 @@ class XlsxExporter:
         col_number: int,
         cell: Cell,
         content_size: Size,
-        cell_format: str | None = None,
+        formats: tuple[str],
     ) -> int:
         """Writes a single cell to the worksheet.
 
@@ -279,12 +291,14 @@ class XlsxExporter:
             col_number (int): The column index where data will be written.
             cell (Cell): The cell object containing data and formatting.
             content_size (Size): The size constraints for the cell.
-            cell_format (str | None): Formatting options.
+            formats (tuple[str]): Formatting options.
 
         Returns:
             int: Status code of the write operation.
         """
-        cell_format = self.get_format(cell.format or cell_format)
+        if cell.format:
+            formats += (cell.format,)
+        cell_format = self.get_format(*formats)
 
         row_number += cell.y_offset
         col_number += cell.x_offset
@@ -329,7 +343,7 @@ class XlsxExporter:
                 0,
                 row,
                 row.size,
-                sheet.format,
+                (sheet.format,) if sheet.format else (),
             )
 
             row_number += row.size.rows

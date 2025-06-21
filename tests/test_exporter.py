@@ -1,3 +1,4 @@
+from collections.abc import Iterator
 from io import BytesIO
 from math import floor
 from pathlib import Path
@@ -7,6 +8,7 @@ import pytest
 from openpyxl.reader.excel import load_workbook
 
 from exdata import XlsxExporter
+from exdata.exceptions import FormatNotFoundError
 from exdata.struct import Cell, Column, Format, RichValue, Row, Sheet
 from tests import make_workbook
 
@@ -55,6 +57,31 @@ def test_cells_format() -> None:
     assert cell.border.bottom.style == 'medium'
     assert cell.alignment.wrapText is True
 
+    assert wb['Test']['B1'].fill.fgColor.rgb == 'FF0000FF'
+
+
+def test_format_inheritance() -> None:
+    wb = make_workbook(
+        data=[
+            Row(
+                [
+                    Cell('Test 1'),
+                    Cell('Test 2', format='cell'),
+                ],
+                format='row',
+            ),
+        ],
+        sheet_format='sheet',
+        formats={
+            'sheet': {'align': 'center'},
+            'row': {'bg_color': '#ff00ff'},
+            'cell': {'bg_color': '#0000ff'},
+        },
+    )
+
+    assert wb['Test']['A1'].alignment.horizontal == 'center'
+    assert wb['Test']['A1'].fill.fgColor.rgb == 'FFFF00FF'
+    assert wb['Test']['B1'].alignment.horizontal == 'center'
     assert wb['Test']['B1'].fill.fgColor.rgb == 'FF0000FF'
 
 
@@ -220,6 +247,27 @@ def test_multiple_sheets() -> None:
     assert wb['Test 2']['A1'].value == 'Test 2'
 
 
+def test_generators() -> None:
+    def generate_column_data(row_id, col_id) -> Iterator[Cell]:
+        yield Cell(f'Test {row_id}.{col_id}')
+
+    def generate_row_data(row_id) -> Iterator[Column]:
+        for col_id in range(1, 4):
+            yield Column(generate_column_data(row_id, col_id))
+
+    def generate_sheet_data() -> Iterator[Row]:
+        for row_id in range(1, 4):
+            yield Row(generate_row_data(row_id))
+
+    wb = make_workbook(
+        data=generate_sheet_data(),
+    )
+
+    for i in range(1, 4):
+        for j in range(1, 4):
+            assert wb['Test'].cell(row=i, column=j).value == f'Test {i}.{j}'
+
+
 def test_row_height() -> None:
     wb = make_workbook(
         data=[
@@ -348,3 +396,14 @@ def test_export_to_path() -> None:
         wb = load_workbook(f)
 
     assert wb['Test']['A1'].value == 'Test'
+
+
+def test_format_not_found() -> None:
+    name = 'non_existent_format'
+    message = (
+        f'Format `{name}` not found. Make sure it is defined in `formats`.'
+    )
+    with pytest.raises(FormatNotFoundError, match=message):
+        make_workbook(
+            data=[Row([Cell('Test', format='non_existent_format')])],
+        )

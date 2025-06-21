@@ -116,11 +116,19 @@ class Column:
     y_offset: int = 0
     expand: bool = True
 
-    def __iter__(self) -> Iterator[Cell]:
+    def __post_init__(self) -> None:
+        """Converts the data attribute to a list after initialization.
+
+        This ensures that the data attribute is always a list, regardless of
+        the input type provided during instantiation.
+        """
+        self.data = list(self.data)
+
+    def __iter__(self) -> Iterator[Cell | Row | Column]:
         """Iterates over the column's contents.
 
         Returns:
-            Iterator[Cell]: An iterator over the column items.
+            Iterator[Cell | Row | Column]: An iterator over the column items.
         """
         yield from self.data
 
@@ -164,11 +172,19 @@ class Row:
     x_offset: int = 0
     y_offset: int = 0
 
-    def __iter__(self) -> Iterator[Cell | Column]:
+    def __post_init__(self) -> None:
+        """Converts the data attribute to a list after initialization.
+
+        This ensures that the data attribute is always a list, regardless of
+        the input type provided during instantiation.
+        """
+        self.data = list(self.data)
+
+    def __iter__(self) -> Iterator[Cell | Row | Column]:
         """Iterates over the row's contents.
 
         Returns:
-            Iterator[Cell | Column]: An iterator over the row items.
+            Iterator[Cell | Row | Column]: An iterator over the row items.
         """
         yield from self.data
 
