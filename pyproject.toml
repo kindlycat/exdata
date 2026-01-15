@@ -1,6 +1,6 @@
 [project]
 name = "exdata"
-version = "0.1.1"
+version = "0.1.2"
 description = "Export data to xlsx"
 authors = [
     {name = "Grigory Mishchenko", email = "grishkokot@gmail.com"},
@@ -8,7 +8,6 @@ authors = [
 license = "MIT"
 readme = "README.md"
 keywords = ["xlsx", "export", "data", "excel", "xlsxwriter"]
-repository = "https://github.com/kindlycat/exdata"
 requires-python = ">=3.10"
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -21,6 +20,12 @@ classifiers = [
 dependencies = [
     "xlsxwriter>=3.2.3",
 ]
+
+[project.urls]
+Homepage = "https://github.com/kindlycat/exdata"
+Documentation = "https://exdata.readthedocs.io"
+Repository = "https://github.com/kindlycat/exdata.git"
+Issues = "https://github.com/kindlycat/exdata/issues"
 
 [tool.uv]
 dev-dependencies = [
